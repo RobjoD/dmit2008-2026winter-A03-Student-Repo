@@ -20,7 +20,9 @@ template.innerHTML = `
   </section>`;
 
 class ResourceResults extends HTMLElement {
-  // TODO: Create a private field for results data
+  #results = [];  // # makes a property or method privately scoped.
+  // This means only methods/logic from the same instance (e.g. ResourceResults) can change it.
+  // We're going to have a controlled process for writing the data, and we don't want outside logic to be able to bypass that.
 
   constructor() {
     super();
@@ -29,7 +31,11 @@ class ResourceResults extends HTMLElement {
     this.attachShadow({ mode: 'open' });
   }
 
-  // TODO: Implement setter for results data, remember to render
+  set results(data) {
+    // The setter method for our private array - similar to what you're learning in C# right now.
+    this.#results = data;
+    this.render();  // when data is set, call our render method (below) to fire the display logic.
+  }
 
   // TODO: Add an event handler method for result selection
 
