@@ -18,14 +18,16 @@ template.innerHTML = `
 
 // Step 3: ResourceResults should react to received filter state
 class ResourceResults extends HTMLElement {
-
-  // If I'm filtering, I need 
-  // - one place to load/store the *full* dataset of results, (already exists: #results)
   #results = [];
-
-  // - and another place to store the *filtered* dataset
   #filteredResults = [];
-
+  #filters = {
+    // We could've added default values earlier, since we knew the data shape,
+    // but I chose to wait until I wrote the event & its payload in case any surprises came up.
+    searchQuery: '',
+    category: 'all',
+    openNow: false,
+    virtual: false,
+  };
 
   constructor() {
     super();
@@ -34,26 +36,42 @@ class ResourceResults extends HTMLElement {
   }
 
   set results(data) {
-    this.#results = data;
+    this.#results = data;  // This is now just a data container for *all* results. We don't mutate it anymore.
+
+    // SUPER IMPORTANT: We're rendering from filtered results now, and our initial state is unfiltered.
+    // Spreading out '[...data]'' just to wrap it back in a list (instead of just passing 'data' again) *looks* stupid, BUT
+    //  doing this creates a shallow copy. If we just passed data, both array variables would point to the same reference,
+    //  so modifying #filteredResults would also affect #results!
+    this.#filteredResults = [...data];
     this.render();
   }
 
   set filters(incomingFilters) {
-    // If I have a private array, I need a setter for it
-    this.#filters = {
-      // Writing the values might be more complicated than I ancitipate,
-      // so I'll leave that for now.
-    }
+    this.#filters = incomingFilters;
+    // Setting the filters is easy now that I know that in this example's case, we'll receive complete data every time.
     
     // After I set/store the incoming filter inputs, I know I need to apply them.
     this.#applyFilters()
   }
 
   #applyFilters() {
-    // This will be its own method, because I can anticipate the logic being extensive. 
+    // Now that I'm sure of the data shape, I can prepare work on this.
+    const { searchQuery, category, openNow, virtual } = this.#filters;  // if this is new to you, look up "destructuring"!
 
-    // I *definitely* don't want this method to be accessible externally, so it's #private too
-    // -> I only need to apply filters as a result of the setter receiving new data
+    // We'll complete the logic that actually filters from the results array in the next commit, but I can plan this out now.
+    //   1. If I have any user-written string inputs in the filters, I'll want to clean those up first. (I do! It's searchQuery).
+    //      The rest of the terms are either booleans or predefined strings the user doesn't have access to, so I don't need to sanitise them.
+    //   2. There are lots of ways of writing filtering/matching logic; my preference would be
+    this.#filteredResults = this.#results.filter(
+      (r) => {
+        // 3. someArray.filter() creates a new array containing *only* elements that pass conditional logic in this block.
+        //    See main.js if you need a refresher on the shape of result data. I'll need to check:
+        //      - if we got a searchQuery, check it against result's summary or location (optionally, category too)
+        //      - if category was selected, and it wasn't 'All', check it against the result's category
+        //      - if openNow was selected, check the result's openNow (boolean)
+        //      - if virtual was selected, check the result's virtual (boolean)
+      }
+    );
     
     this.render(); // I already know I'll need to re-render, because I'm changing the data displayed by the UI
   }
@@ -90,13 +108,12 @@ class ResourceResults extends HTMLElement {
   }
   
   render() {
-    // - I will have to render from the *filtered* dataset, not #results
     const content = template.content.cloneNode(true)
     const listGroup = content.querySelector('.list-group');
 
-
-    if (this.#results.length) {
-      const resultsHTML = this.#results.map(
+    // Now that we're set up to render from #filteredResults instead, let's reflect that here:
+    if (this.#filteredResults.length) {
+      const resultsHTML = this.#filteredResults.map(
         result => `
         <button type="button" class="list-group-item list-group-item-action" data-id="${result.id}">
           <div class="d-flex w-100 justify-content-between">
