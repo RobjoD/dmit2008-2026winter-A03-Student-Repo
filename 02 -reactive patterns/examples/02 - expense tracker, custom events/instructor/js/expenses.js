@@ -48,7 +48,7 @@ const expenses = {
   // and implement details later!
   removeExpense(id) {  // I know I'll need at least an ID to identify what to remove
     // I could specifically remove the element from the list, but I can also just filter it out:
-    this.list.filter(expense => expense.id !== id);  // rebuild the array without the matching expense
+    this.list = this.list.filter(expense => expense.id !== id);  // rebuild the array without the matching expense
     this.publish("update", this.list);
   },
 
